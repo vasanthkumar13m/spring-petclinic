@@ -16,6 +16,7 @@ pipeline {
             defaultValue: '1.0.0',
             description: 'Spring APP Version'
             )
+    }
     tools {
         maven 'maven'
     }
