@@ -2,8 +2,8 @@ pipeline {
     agent any
     parameters {
         choice(
-            name: 'ENVIRONMENT'
-            choices: ['DEV', 'QA', 'TEST', 'PROD']
+            name: 'ENVIRONMENT',
+            choices: ['DEV', 'QA', 'TEST', 'PROD'],
             description: 'Select the Enviroments for Deploy'
             )
         booleanParam(
