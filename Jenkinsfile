@@ -1,6 +1,21 @@
 pipeline {
     agent any
-
+    parameters {
+        choice(
+            name: 'ENVIRONMENT'
+            choices: ['DEV', 'QA', 'TEST', 'PROD']
+            description: 'Select the Enviroments for Deploy'
+            )
+        booleanParam(
+            name: 'DEPLOY',
+            defaultValue: true,
+            description: 'Deploy the Spring APP'
+            )
+        string(
+            name: 'VERSION',
+            defaultValue: '1.0.0',
+            description: 'Spring APP Version'
+            )
     tools {
         maven 'maven'
     }
