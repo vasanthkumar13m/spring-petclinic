@@ -6,30 +6,49 @@ pipeline {
     }
 
     stages {
-        stage('Checkout'){
+
+        stage('Checkout') {
             steps {
-                git branch: 'feature/practice-vasanth', credentialsId: 'github', url: 'https://github.com/vasanthkumar13m/spring-petclinic.git'
+                git branch: 'feature/practice-vasanth',
+                    credentialsId: 'github',
+                    url: 'https://github.com/vasanthkumar13m/spring-petclinic.git'
             }
         }
+
         stage('Build') {
             steps {
                 sh 'mvn clean package'
             }
-
         }
+
         stage('Archive Artifact') {
             steps {
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                archiveArtifacts artifacts: 'target/*.jar',
+                                  fingerprint: true
             }
         }
+
         stage('Deploy To EC2') {
             steps {
-                sshPublisher(publishers: [sshPublisherDesc(configName: 'ec2-instance', transfers: [sshTransfer(sourceFiles: 'target/*.jar', removePrefix: 'target', remoteDirectory:'/app')])])
+                sshPublisher(
+                    publishers: [
+                        sshPublisherDesc(
+                            configName: 'ec2-instance',
+                            transfers: [
+                                sshTransfer(
+                                    sourceFiles: 'target/*.jar',
+                                    removePrefix: 'target',
+                                    remoteDirectory: '/app'
+                                )
+                            ]
+                        )
+                    ]
+                )
             }
         }
     }
-}
-post {
+
+    post {
 
         success {
             emailext(
@@ -38,7 +57,7 @@ post {
 Build Successful
 
 Job Name : ${env.JOB_NAME}
-Build No : ${env.BUILD_NUMBER}
+Build No  : ${env.BUILD_NUMBER}
 
 Build URL:
 ${env.BUILD_URL}
@@ -56,7 +75,7 @@ JAR File Created Successfully.
 Build Failed
 
 Job Name : ${env.JOB_NAME}
-Build No : ${env.BUILD_NUMBER}
+Build No  : ${env.BUILD_NUMBER}
 
 Check Console:
 ${env.BUILD_URL}
