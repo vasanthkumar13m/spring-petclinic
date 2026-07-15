@@ -59,6 +59,9 @@ Build Successful
 Job Name : ${env.JOB_NAME}
 Build No  : ${env.BUILD_NUMBER}
 
+Download JAR:
+${env.BUILD_URL}artifact/target/
+
 Build URL:
 ${env.BUILD_URL}
 
