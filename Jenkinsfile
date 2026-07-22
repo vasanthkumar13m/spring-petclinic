@@ -5,6 +5,10 @@ pipeline {
         maven 'maven'
     }
 
+    environment {
+        SCANNER_HOME = tool 'sonar-scanner'
+    }
+
     stages {
 
         stage('Checkout') {
@@ -18,6 +22,32 @@ pipeline {
         stage('Build') {
             steps {
                 sh 'mvn clean package'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+    steps {
+        withSonarQubeEnv('sonarqube') {
+            withCredentials([
+                string(
+                    credentialsId: 'SonarQube',
+                    variable: 'SONAR_TOKEN'
+                )
+            ]) {
+                sh """
+                    ${SCANNER_HOME}/bin/sonar-scanner \
+                    -Dsonar.token=$SONAR_TOKEN
+                """
+            }
+        }
+    }
+}
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
 
@@ -59,13 +89,10 @@ Build Successful
 Job Name : ${env.JOB_NAME}
 Build No  : ${env.BUILD_NUMBER}
 
-Download JAR:
-${env.BUILD_URL}artifact/target/*.jar
-
 Build URL:
 ${env.BUILD_URL}
 
-JAR File Created Successfully.
+JAR File Created and SonarQube Analysis Passed Successfully.
 """,
                 to: 'somisettyvasanthkumar@gmail.com'
             )
