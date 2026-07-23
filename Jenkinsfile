@@ -31,6 +31,7 @@ pipeline {
             withCredentials([
                 string(
                     credentialsId: 'SonarQube',
+                    variable: 'SONAR_TOKEN'
                 )
             ]) {
                 sh """
@@ -43,7 +44,6 @@ pipeline {
 }
 
         
-
         stage('Archive Artifact') {
             steps {
                 archiveArtifacts artifacts: 'target/*.jar',
