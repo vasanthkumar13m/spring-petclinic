@@ -31,12 +31,10 @@ pipeline {
             withCredentials([
                 string(
                     credentialsId: 'SonarQube',
-                    variable: 'SONAR_TOKEN'
                 )
             ]) {
                 sh """
                     ${SCANNER_HOME}/bin/sonar-scanner \
-                    -Dsonar.token=$SONAR_TOKEN
                 """
             }
         }
