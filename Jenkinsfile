@@ -35,6 +35,7 @@ pipeline {
             ]) {
                 sh """
                     ${SCANNER_HOME}/bin/sonar-scanner \
+                    -Dsonar.token=$SONAR_TOKEN
                 """
             }
         }
