@@ -43,6 +43,7 @@ pipeline {
     }
 }
 
+
         
         stage('Archive Artifact') {
             steps {
@@ -52,23 +53,44 @@ pipeline {
         }
 
         stage('Deploy To EC2') {
-            steps {
-                sshPublisher(
-                    publishers: [
-                        sshPublisherDesc(
-                            configName: 'ec2-instance',
-                            transfers: [
-                                sshTransfer(
-                                    sourceFiles: 'target/*.jar',
-                                    removePrefix: 'target',
-                                    remoteDirectory: '/app'
-                                )
-                            ]
+    steps {
+        sshPublisher(
+            publishers: [
+                sshPublisherDesc(
+                    configName: 'ec2-instance',
+                    transfers: [
+                        sshTransfer(
+                            sourceFiles: 'target/*.jar',
+                            removePrefix: 'target',
+                            remoteDirectory: '/app',
+                            execCommand: '''
+                                mkdir -p /app
+
+                                # Stop old application
+                                pkill -f "spring-petclinic.*jar" || true
+
+                                sleep 5
+
+                                # Find deployed jar
+                                JAR_FILE=$(ls /app/*.jar | head -n 1)
+
+                                # Start application
+                                nohup java -jar "$JAR_FILE" > /app/application.log 2>&1 &
+
+                                sleep 15
+
+                                # Verify application started
+                                pgrep -f "$JAR_FILE"
+
+                                echo "Application restarted successfully"
+                            '''
                         )
                     ]
                 )
-            }
-        }
+            ]
+        )
+    }
+}
     }
 
     post {
