@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:25-jre
 LABEL maintainer="Vasanth Kumar"
 WORKDIR /app
 COPY petclinic.jar petclinic.jar
