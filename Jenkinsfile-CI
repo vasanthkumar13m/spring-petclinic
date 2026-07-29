@@ -84,6 +84,7 @@ pipeline {
                 rm -f petclinic.jar
 
                 curl -u ${ARTIFACTORY_USER_USR}:${ARTIFACTORY_USER_PSW} \
+                -o petclinic.jar \
                 http://localhost:8082/artifactory/libs-release-local/petclinic/spring-petclinic-4.0.0-SNAPSHOT.jar
 
                 """
