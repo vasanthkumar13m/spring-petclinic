@@ -1,0 +1,133 @@
+pipeline {
+
+    agent any
+
+    parameters {
+
+        string(
+
+            name: 'IMAGE_TAG',
+
+            defaultValue: '',
+
+            description: 'Docker Image Tag'
+
+        )
+
+    }
+
+    stages {
+
+        stage('Approval') {
+
+            steps {
+
+                input(
+
+                    message: "Deploy Docker Image ${params.IMAGE_TAG} to EC2?",
+
+                    ok: "Deploy"
+
+                )
+
+            }
+
+        }
+
+        stage('Deploy To EC2') {
+
+            steps {
+
+                sshPublisher(
+
+                    publishers: [
+
+                        sshPublisherDesc(
+
+                            configName: 'ec2-instance',
+
+                            transfers: [
+
+                                sshTransfer(
+
+                                    execCommand: """
+
+                                    docker pull pvhr/petclinic:${params.IMAGE_TAG}
+                                    docker run -d \
+                                    --name spring-app \
+                                    -p 8080:8080 \
+                                    pvhr/petclinic:${params.IMAGE_TAG}
+
+                                    """
+
+                                )
+
+                            ]
+
+                        )
+
+                    ]
+
+                )
+
+            }
+
+        }
+
+        stage('Health Check') {
+
+            steps {
+
+                sshPublisher(
+
+                    publishers: [
+
+                        sshPublisherDesc(
+
+                            configName: 'ec2-instance',
+
+                            transfers: [
+
+                                sshTransfer(
+
+                                    execCommand: """
+
+                                    docker ps
+
+                                    curl http://localhost:8080
+
+                                    """
+
+                                )
+
+                            ]
+
+                        )
+
+                    ]
+
+                )
+
+            }
+
+        }
+
+    }
+
+    post {
+
+        success {
+
+            echo "Application Successfully Deployed"
+
+        }
+
+        failure {
+
+            echo "Deployment Failed"
+
+        }
+
+    }
+
+}
