@@ -1,4 +1,5 @@
 pipeline {
+
     agent any
 
     tools {
@@ -6,136 +7,159 @@ pipeline {
     }
 
     environment {
+
         DOCKER_IMAGE = "somisettyvasanth/petclinic"
-        SCANNER_HOME = tool 'sonar'
+
+        DOCKER_CREDS = credentials('dockerhub-creds')
+
+        ARTIFACTORY_USER = credentials('jfrog-creds')
+        SCANNER_HOME  = tool 'sonar'
+
     }
 
     stages {
 
         stage('Checkout') {
+
             steps {
+
                 git branch: 'feature/practice-vasanth',
-                    credentialsId: 'github',
-                    url: 'https://github.com/vasanthkumar13m/spring-petclinic.git'
+                credentialsId: 'github',
+                url: 'https://github.com/vasanthkumar13m/spring-petclinic.git'
+
             }
+
         }
 
         stage('Build') {
+
             steps {
-                sh 'mvn clean package -DskipTests'
+
+                sh 'mvn clean package'
+
             }
+
         }
 
         stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    withCredentials([
-                        string(credentialsId: 'SonarQube', variable: 'SONAR_TOKEN')
-                    ]) {
-                        sh """
-                        ${SCANNER_HOME}/bin/sonar-scanner \
-                        -Dsonar.token=$SONAR_TOKEN
-                        """
-                    }
-                }
+    steps {
+        withSonarQubeEnv('SonarQube') {
+            withCredentials([
+                string(
+                    credentialsId: 'SonarQube',
+                    variable: 'SONAR_TOKEN'
+                )
+            ]) {
+                sh """
+                    ${SCANNER_HOME}/bin/sonar-scanner \
+                    -Dsonar.token=$SONAR_TOKEN
+                """
             }
         }
+    }
+}
 
         stage('Upload Artifact To JFrog') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'jfrog-creds',
-                        usernameVariable: 'JFROG_USER',
-                        passwordVariable: 'JFROG_PASS'
-                    )
-                ]) {
 
-                    sh '''
-                    curl -u $JFROG_USER:$JFROG_PASS \
-                    -T target/*.jar \
-                    http://localhost:8082/artifactory/libs-release-local/petclinic/
-                    '''
-                }
+            steps {
+
+                sh """
+
+                curl -u ${ARTIFACTORY_USER_USR}:${ARTIFACTORY_USER_PSW} \
+                -T target/*.jar \
+                http://localhost:8082/artifactory/libs-release-local/petclinic/
+
+                """
+
             }
+
         }
 
         stage('Download Artifact From JFrog') {
+
             steps {
 
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'jfrog-creds',
-                        usernameVariable: 'JFROG_USER',
-                        passwordVariable: 'JFROG_PASS'
-                    )
-                ]) {
+                sh """
 
-                    sh '''
-                    rm -f petclinic.jar
+                rm -f petclinic.jar
 
-                    curl -u $JFROG_USER:$JFROG_PASS \
-                    -o petclinic.jar \
-                    http://localhost:8082/artifactory/libs-release-local/petclinic/spring-petclinic-4.0.0-SNAPSHOT.jar
-                    '''
-                }
+                curl -u ${ARTIFACTORY_USER_USR}:${ARTIFACTORY_USER_PSW} \
+                -o petclinic.jar \
+                http://localhost:8082/artifactory/libs-release-local/petclinic/spring-petclinic-4.0.0-SNAPSHOT.jar
+
+                """
 
             }
+
         }
 
         stage('Build Docker Image') {
+
             steps {
+
                 sh """
+
                 docker build \
-                -t ${DOCKER_IMAGE}:${BUILD_NUMBER} \
-                -t ${DOCKER_IMAGE}:latest .
+                -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
+
                 """
+
             }
+
         }
 
         stage('Docker Login') {
 
             steps {
 
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )
-                ]) {
+                sh """
 
-                    sh '''
-                    echo "$DOCKER_PASS" | docker login \
-                    -u "$DOCKER_USER" \
-                    --password-stdin
-                    '''
-                }
+                echo ${DOCKER_CREDS_PSW} | docker login \
+                -u ${DOCKER_CREDS_USR} \
+                --password-stdin
+
+                """
 
             }
 
         }
 
         stage('Push Docker Image') {
+
             steps {
+
                 sh """
+
                 docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                docker push ${DOCKER_IMAGE}:latest
+
                 """
+
             }
+
         }
 
         stage('Trigger CD Pipeline') {
+
             steps {
+
                 build job: 'petclinic-CD',
+
                 wait: true,
+
                 parameters: [
+
                     string(
+
                         name: 'IMAGE_TAG',
+
                         value: "${BUILD_NUMBER}"
+
                     )
+
                 ]
+
             }
+
         }
 
     }
@@ -143,15 +167,21 @@ pipeline {
     post {
 
         success {
-            echo 'CI Pipeline Completed Successfully'
+
+            echo "CI Pipeline Completed Successfully"
+
         }
 
         failure {
-            echo 'CI Pipeline Failed'
+
+            echo "CI Pipeline Failed"
+
         }
 
         always {
+
             cleanWs()
+
         }
 
     }
