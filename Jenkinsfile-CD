@@ -52,11 +52,11 @@ pipeline {
 
                                     execCommand: """
 
-                                    docker pull pvhr/petclinic:${params.IMAGE_TAG}
+                                    docker pull somisettyvasanth/petclinic:${params.IMAGE_TAG}
                                     docker run -d \
-                                    --name spring-app \
+                                    --name petclinic \
                                     -p 8080:8080 \
-                                    pvhr/petclinic:${params.IMAGE_TAG}
+                                    somisettyvasanth/petclinic:${params.IMAGE_TAG}
 
                                     """
 
