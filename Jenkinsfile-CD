@@ -57,43 +57,7 @@ pipeline {
                                     --name petclinic \
                                     -p 8080:8080 \
                                     somisettyvasanth/petclinic:${params.IMAGE_TAG}
-
-                                    """
-
-                                )
-
-                            ]
-
-                        )
-
-                    ]
-
-                )
-
-            }
-
-        }
-
-        stage('Health Check') {
-
-            steps {
-
-                sshPublisher(
-
-                    publishers: [
-
-                        sshPublisherDesc(
-
-                            configName: 'ec2-instance',
-
-                            transfers: [
-
-                                sshTransfer(
-
-                                    execCommand: """
-
                                     docker ps
-
                                     curl http://localhost:8080
 
                                     """
