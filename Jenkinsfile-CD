@@ -10,87 +10,79 @@ pipeline {
         )
     }
 
+    environment {
+        EC2_HOST = "13.127.173.77"
+        EC2_USER = "ubuntu"
+        IMAGE_NAME = "somisettyvasanth/petclinic"
+        CONTAINER_NAME = "petclinic"
+    }
+
     stages {
 
         stage('Approval') {
-
             steps {
-
                 input(
                     message: "Deploy Docker Image ${params.IMAGE_TAG} to EC2?",
                     ok: "Deploy"
                 )
-
             }
-
         }
 
-        stage('Deploy To EC2') {
+        stage('Deploy to EC2') {
 
             steps {
 
-                sshPublisher(
+                sshagent(credentials: ['ec2-ssh-key']) {
 
-                    publishers: [
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} '
 
-                        sshPublisherDesc(
+                    set -e
 
-                            configName: 'ec2-instance',
+                    echo "===== Pull Docker Image ====="
 
-                            transfers: [
+                    docker pull ${IMAGE_NAME}:${params.IMAGE_TAG}
 
-                                sshTransfer(
+                    echo "===== Stop Existing Container ====="
 
-                                    execCommand: """
+                    docker stop ${CONTAINER_NAME} || true
 
-                                    docker pull somisettyvasanth/petclinic:${params.IMAGE_TAG}
+                    echo "===== Remove Existing Container ====="
 
-                                    docker stop petclinic || true
+                    docker rm ${CONTAINER_NAME} || true
 
-                                    docker rm petclinic || true
+                    echo "===== Run Container ====="
 
-                                    docker run -d \
-                                    --name petclinic \
-                                    --restart unless-stopped \
-                                    -p 8080:8080 \
-                                    somisettyvasanth/petclinic:${params.IMAGE_TAG}
+                    docker run -d \
+                      --name ${CONTAINER_NAME} \
+                      -p 8080:8080 \
+                      ${IMAGE_NAME}:${params.IMAGE_TAG}
 
-                                    sleep 20
+                    echo "Waiting for application..."
+                    sleep 20
 
-                                    docker ps
+                    echo "===== Running Containers ====="
+                    docker ps || true
 
-                                    docker logs --tail 30 petclinic
+                    echo "===== Health Check ====="
+                    curl -ikL http://localhost:8080 || true
 
-                                    curl -f http://localhost:8080
+                    '
 
-                                    """
-
-                                )
-
-                            ]
-
-                        )
-
-                    ]
-
-                )
-
+                    """
+                }
             }
-
         }
-
     }
 
     post {
 
         success {
-            echo 'Application Successfully Deployed'
+            echo "Application Successfully Deployed"
         }
 
         failure {
-            echo 'Deployment Failed'
+            echo "Deployment Failed"
         }
-
     }
-
 }
