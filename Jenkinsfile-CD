@@ -11,10 +11,10 @@ pipeline {
     }
 
     environment {
-        EC2_HOST = "13.234.111.85"
+        EC2_HOST = "13.233.79.223"
         EC2_USER = "ubuntu"
-        IMAGE_NAME = "somisettyvasanth/spring-boot"
-        CONTAINER_NAME = "spring-boot"
+        IMAGE_NAME = "somisettyvasanth/spring"
+        CONTAINER_NAME = "spring"
     }
 
     stages {
