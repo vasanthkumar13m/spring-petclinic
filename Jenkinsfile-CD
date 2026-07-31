@@ -15,6 +15,7 @@ pipeline {
         EC2_USER = "ubuntu"
         IMAGE_NAME = "somisettyvasanth/petclinic"
         CONTAINER_NAME = "petclinic"
+        DOCKER_CREDS = credentials('dockerhub-creds')
     }
 
     stages {
@@ -38,6 +39,9 @@ pipeline {
                     ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} '
 
                     set -e
+                     echo ${DOCKER_CREDS_PSW} | docker login \
+                -u ${DOCKER_CREDS_USR} \
+                --password-stdin
 
                     echo "===== Pull Docker Image ====="
 
