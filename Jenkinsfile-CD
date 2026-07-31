@@ -13,8 +13,8 @@ pipeline {
     environment {
         EC2_HOST = "13.234.111.85"
         EC2_USER = "ubuntu"
-        IMAGE_NAME = "somisettyvasanth/petclinic"
-        CONTAINER_NAME = "petclinic"
+        IMAGE_NAME = "somisettyvasanth/spring-boot"
+        CONTAINER_NAME = "spring-boot"
         DOCKER_CREDS = credentials('dockerhub-creds')
     }
 
