@@ -8,7 +8,7 @@ pipeline {
 
     environment {
 
-        DOCKER_IMAGE = "somisettyvasanth/spring-boot"
+        DOCKER_IMAGE = "somisettyvasanth/spring"
 
         DOCKER_CREDS = credentials('dockerhub-creds')
 
@@ -67,7 +67,7 @@ pipeline {
 
                 curl -u ${ARTIFACTORY_USER_USR}:${ARTIFACTORY_USER_PSW} \
                 -T target/*.jar \
-                http://localhost:8082/artifactory/libs-release-local/spring-boot/
+                http://localhost:8082/artifactory/libs-release-local/spring/
 
                 """
 
@@ -85,7 +85,7 @@ pipeline {
 
                 curl -u ${ARTIFACTORY_USER_USR}:${ARTIFACTORY_USER_PSW} \
                 -o petclinic.jar \
-                http://localhost:8082/artifactory/libs-release-local/spring-boot/spring-petclinic-4.0.0-SNAPSHOT.jar
+                http://localhost:8082/artifactory/libs-release-local/spring/spring-petclinic-4.0.0-SNAPSHOT.jar
 
                 """
 
