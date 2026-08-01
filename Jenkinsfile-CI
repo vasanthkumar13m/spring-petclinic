@@ -14,6 +14,8 @@ pipeline {
 
         ARTIFACTORY_USER = credentials('jfrog-creds')
         SCANNER_HOME  = tool 'sonar'
+        EC2_USER = "ubuntu"
+        EC2_HOST = "13.233.79.223"
 
     }
 
@@ -131,6 +133,20 @@ pipeline {
                 sh """
 
                 docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
+
+                """
+
+            }
+
+        }
+        stage('Copy Docker Compose File') {
+
+            steps {
+                sshagent(credentials: ['ec2-ssh-key'])
+
+                sh """
+
+                scp -o StrictHostKeyChecking=no docker-compose.yml ${EC2_USER}@${EC2_HOST}:~/docker-compose.yml
 
                 """
 
