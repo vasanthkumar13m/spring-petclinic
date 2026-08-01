@@ -42,6 +42,8 @@ services:
       - POSTGRES_PASSWORD=petclinic
       - POSTGRES_USER=petclinic
       - POSTGRES_DB=petclinic
+    networks:
+      - petclinic-network
 
 volumes:
   mysql-data:
