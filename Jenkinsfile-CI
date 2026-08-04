@@ -15,7 +15,7 @@ pipeline {
         ARTIFACTORY_USER = credentials('jfrog-creds')
         SCANNER_HOME  = tool 'sonar'
         EC2_USER = "ubuntu"
-        EC2_HOST = "13.233.79.223"
+        EC2_HOST = "13.201.48.155"
 
     }
 
