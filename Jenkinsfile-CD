@@ -11,7 +11,7 @@ pipeline {
     }
 
     environment {
-        EC2_HOST = "13.201.48.155"
+        EC2_HOST = "3.109.208.200"
         EC2_USER = "ubuntu"
         IMAGE_NAME = "somisettyvasanth/spring"
         CONTAINER_NAME = "spring"
