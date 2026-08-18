@@ -13,193 +13,193 @@ pipeline {
         DOCKER_CREDS = credentials('dockerhub-creds')
 
         ARTIFACTORY_USER = credentials('jfrog-creds')
-
-        SCANNER_HOME = tool 'sonar'
-
+        SCANNER_HOME  = tool 'sonar'
         EC2_USER = "ubuntu"
         EC2_HOST = "3.109.208.200"
+
     }
 
     stages {
 
         stage('Checkout') {
+
             steps {
+
                 git branch: 'feature/practice-vasanth',
-                    credentialsId: 'github',
-                    url: 'https://github.com/vasanthkumar13m/spring-petclinic.git'
+                credentialsId: 'github',
+                url: 'https://github.com/vasanthkumar13m/spring-petclinic.git'
+
             }
+
         }
 
-        stage('Build & Test') {
+        stage('Build') {
+
             steps {
-                sh '''
-                    set -o pipefail
 
-                    mvn clean package -e
-                '''
+                sh 'mvn clean package'
+
             }
 
-            post {
-                always {
-                    echo "===== Maven Surefire Test Reports ====="
-
-                    junit(
-                        testResults: 'target/surefire-reports/*.xml',
-                        allowEmptyResults: true,
-                        skipPublishingChecks: true
-                    )
-
-                    sh '''
-                        echo "===== Surefire Report Files ====="
-
-                        if [ -d target/surefire-reports ]; then
-                            ls -lh target/surefire-reports/
-
-                            echo "===== Test Error Details ====="
-
-                            grep -R -n -E "<<< ERROR!|<<< FAILURE!|Caused by:|Exception:" \
-                                target/surefire-reports/ || true
-                        else
-                            echo "Surefire reports directory not found."
-                        fi
-                    '''
-                }
-            }
         }
 
         stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-
-                    withCredentials([
-                        string(
-                            credentialsId: 'sonar-token',
-                            variable: 'SONAR_TOKEN'
-                        )
-                    ]) {
-
-                        sh '''
-                            ${SCANNER_HOME}/bin/sonar-scanner \
-                            -Dsonar.token="$SONAR_TOKEN"
-                        '''
-                    }
-                }
+    steps {
+        withSonarQubeEnv('SonarQube') {
+            withCredentials([
+                string(
+                    credentialsId: 'sonar-token',
+                    variable: 'SONAR_TOKEN'
+                )
+            ]) {
+                sh """
+                    ${SCANNER_HOME}/bin/sonar-scanner \
+                    -Dsonar.token=$SONAR_TOKEN
+                """
             }
         }
+    }
+}
 
         stage('Upload Artifact To JFrog') {
+
             steps {
 
-                sh '''
-                    echo "Uploading JAR to JFrog..."
+                sh """
 
-                    curl --fail --show-error --silent \
-                        -u "$ARTIFACTORY_USER_USR:$ARTIFACTORY_USER_PSW" \
-                        -T target/*.jar \
-                        "http://localhost:8082/artifactory/libs-release-local/spring/"
-                '''
+                curl -u ${ARTIFACTORY_USER_USR}:${ARTIFACTORY_USER_PSW} \
+                -T target/*.jar \
+                http://localhost:8082/artifactory/libs-release-local/spring/
+
+                """
+
             }
+
         }
 
         stage('Download Artifact From JFrog') {
+
             steps {
 
-                sh '''
-                    echo "Downloading artifact from JFrog..."
+                sh """
 
-                    rm -f petclinic.jar
+                rm -f petclinic.jar
 
-                    curl --fail --show-error --silent \
-                        -u "$ARTIFACTORY_USER_USR:$ARTIFACTORY_USER_PSW" \
-                        -o petclinic.jar \
-                        "http://localhost:8082/artifactory/libs-release-local/spring/spring-petclinic-4.0.0-SNAPSHOT.jar"
+                curl -u ${ARTIFACTORY_USER_USR}:${ARTIFACTORY_USER_PSW} \
+                -o petclinic.jar \
+                http://localhost:8082/artifactory/libs-release-local/spring/spring-petclinic-4.0.0-SNAPSHOT.jar
 
-                    ls -lh petclinic.jar
-                '''
+                """
+
             }
+
         }
 
         stage('Build Docker Image') {
+
             steps {
 
-                sh '''
-                    echo "Building Docker image..."
+                sh """
 
-                    docker build \
-                        -t "$DOCKER_IMAGE:$BUILD_NUMBER" .
-                '''
+                docker build \
+                -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
+
+                """
+
             }
+
         }
 
         stage('Docker Login') {
+
             steps {
 
-                sh '''
-                    echo "$DOCKER_CREDS_PSW" | docker login \
-                        -u "$DOCKER_CREDS_USR" \
-                        --password-stdin
-                '''
+                sh """
+
+                echo ${DOCKER_CREDS_PSW} | docker login \
+                -u ${DOCKER_CREDS_USR} \
+                --password-stdin
+
+                """
+
             }
+
         }
 
         stage('Push Docker Image') {
+
             steps {
 
-                sh '''
-                    docker push "$DOCKER_IMAGE:$BUILD_NUMBER"
-                '''
+                sh """
+
+                docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
+
+                """
+
             }
+
         }
-
         stage('Copy Docker Compose File') {
+
             steps {
+                sshagent(credentials: ['ec2-ssh-key'])
 
-                sshagent(credentials: ['ec2-ssh-key']) {
+                sh """
 
-                    sh '''
-                        scp -o StrictHostKeyChecking=no \
-                            docker-compose.yml \
-                            "$EC2_USER@$EC2_HOST:~/docker-compose.yml"
-                    '''
-                }
+                scp -o StrictHostKeyChecking=no docker-compose.yml ${EC2_USER}@${EC2_HOST}:~/docker-compose.yml
+
+                """
+
             }
+
         }
 
         stage('Trigger CD Pipeline') {
+
             steps {
 
                 build job: 'petclinic2-CD',
-                    wait: true,
-                    parameters: [
-                        string(
-                            name: 'IMAGE_TAG',
-                            value: "${BUILD_NUMBER}"
-                        )
-                    ]
+
+                wait: true,
+
+                parameters: [
+
+                    string(
+
+                        name: 'IMAGE_TAG',
+
+                        value: "${BUILD_NUMBER}"
+
+                    )
+
+                ]
+
             }
+
         }
+
     }
 
     post {
 
         success {
-            echo "========================================"
+
             echo "CI Pipeline Completed Successfully"
-            echo "========================================"
+
         }
 
         failure {
-            echo "========================================"
+
             echo "CI Pipeline Failed"
-            echo "Check the Maven/Surefire test results above."
-            echo "========================================"
+
         }
 
         always {
-            archiveArtifacts(
-                artifacts: 'target/surefire-reports/**/*',
-                allowEmptyArchive: true
-            )
+
+            cleanWs()
+
         }
+
     }
+
 }
