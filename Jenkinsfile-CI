@@ -15,7 +15,7 @@ pipeline {
         ARTIFACTORY_USER = credentials('jfrog-creds')
         SCANNER_HOME  = tool 'sonar'
         EC2_USER = "ubuntu"
-        EC2_HOST = "13.201.48.155"
+        EC2_HOST = "3.109.208.200"
 
     }
 
@@ -48,7 +48,7 @@ pipeline {
         withSonarQubeEnv('SonarQube') {
             withCredentials([
                 string(
-                    credentialsId: 'SonarQube',
+                    credentialsId: 'sonar-token',
                     variable: 'SONAR_TOKEN'
                 )
             ]) {
