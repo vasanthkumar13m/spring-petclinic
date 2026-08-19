@@ -139,58 +139,35 @@ pipeline {
             }
 
         }
-        stage('Copy Docker Compose File') {
 
+        stage('Update GitOps Repo') {
             steps {
-                sshagent(credentials: ['ec2-ssh-key'])
-
-                sh """
-
-                scp -o StrictHostKeyChecking=no docker-compose.yml ${EC2_USER}@${EC2_HOST}:~/docker-compose.yml
-
-                """
-
-            }
-
-        }
-
-        stage('Trigger CD Pipeline') {
-
-            steps {
-
-                build job: 'petclinic2-CD',
-
-                wait: true,
-
-                parameters: [
-
-                    string(
-
-                        name: 'IMAGE_TAG',
-
-                        value: "${BUILD_NUMBER}"
-
-                    )
-
-                ]
-
-            }
-
-        }
-
-    }
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'github',
+                        usernameVariable: 'GIT_USER'
+                        passwordVariable: 'GIT_TOKEN'
+                        )
+                     ]) {
+                         sh '''
+                           git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/vasanthkumar13m/Kubernetes-Deploy-ArgoCD.git gitops
+                           cd gitops
+                           sed -i "s#image:.*#image: ${DOCKER_IMAGE}:${BUILD_NUMBER}#" deployment.yml
+                           git config user.name "vasanthkumar13m"
+                           git config user.email "somisettyvasanthkumar@gmail.com"
+                           git add deployment.yml
+                           git commit -m "Update image to ${BUILD_NUMBER  }" || true
+                           git push origin master
+                        '''
+                 }
+              }
+           }
 
     post {
 
         success {
 
             echo "CI Pipeline Completed Successfully"
-
-        }
-
-        failure {
-
-            echo "CI Pipeline Failed"
 
         }
 
