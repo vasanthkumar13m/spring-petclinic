@@ -1,39 +1,16 @@
-version: "3.8"
 services:
   mysql:
     image: mysql:9.7
-    container_name: mysql-db
-    restart: always
-
-    environment:
-      MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: springbootDB
-      MYSQL_USER: springuser
-      MYSQL_PASSWORD: spring1234
     ports:
       - "3306:3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
-    networks:
-      - petclinic-network
-
-
-  petclinic:
-    image: somisettyvasanth/spring-boot:${IMAGE_TAG}
-    container_name: spring-app
-    restart: always
-    depends_on:
-      - mysql
-    ports:
-      - "8080:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: mysql
-      MYSQL_URL: jdbc:mysql://mysql:3306/springbootDB
-      MYSQL_USER: springbootuser
-      MYSQL_PASS: spring1234
-    networks:
-      - petclinic-network
-
+      - MYSQL_ROOT_PASSWORD=
+      - MYSQL_ALLOW_EMPTY_PASSWORD=true
+      - MYSQL_USER=petclinic
+      - MYSQL_PASSWORD=petclinic
+      - MYSQL_DATABASE=petclinic
+    volumes:
+      - "./conf.d:/etc/mysql/conf.d:ro"
   postgres:
     image: postgres:18.4
     ports:
@@ -42,11 +19,3 @@ services:
       - POSTGRES_PASSWORD=petclinic
       - POSTGRES_USER=petclinic
       - POSTGRES_DB=petclinic
-    networks:
-      - petclinic-network
-
-volumes:
-  mysql-data:
-
-networks:
-  petclinic-network:
